@@ -1,5 +1,3 @@
-Отлично. Теперь вставь весь этот код в пустой MainActivity.kt.
-Текст
 package com.zuno.app
 
 import android.graphics.Color
