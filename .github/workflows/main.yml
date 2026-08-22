@@ -25,25 +25,32 @@ jobs:
           mkdir project
           unzip -q Zuno-Android-Project.zip -d project
 
+          echo "Files inside project:"
+          find project -maxdepth 3 -type f | sort
+
           PROJECT_DIR=$(dirname "$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)")
 
           if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
-            echo "Android project not found inside ZIP"
-            find project -maxdepth 3 -type f
+            echo "ERROR: Android project was not found"
             exit 1
           fi
 
           echo "Project directory: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
       - name: Build APK
         run: |
           cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug --stacktrace
 
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
           name: Zuno-APK
           path: "**/app/build/outputs/apk/debug/*.apk"
+          if-no-files-found: error
