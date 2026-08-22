@@ -3,91 +3,53 @@ package com.zuno.app
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var productContainer: LinearLayout
+    private lateinit var feed: LinearLayout
 
-    private val products = mutableListOf(
-        Product("Premium аккаунт", "Доступ на 30 дней", 499),
-        Product("Игровой ключ", "Цифровой товар", 299),
-        Product("VPN на 30 дней", "Быстрый VPN", 199)
-    )
-
-    data class Product(
-        val name: String,
-        val description: String,
-        val price: Int
+    private val posts = mutableListOf(
+        "Добро пожаловать в Zuno! 🚀",
+        "Это первая публикация нашей социальной сети."
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        createInterface()
+        showHome()
     }
 
-    private fun createInterface() {
-
+    private fun showHome() {
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
         root.setBackgroundColor(Color.rgb(15, 17, 20))
 
-        // Заголовок
         val header = TextView(this)
-        header.text = "ZUNO"
+        header.text = "Zuno"
         header.textSize = 28f
         header.setTextColor(Color.WHITE)
         header.gravity = Gravity.CENTER
-        header.setPadding(20, 35, 20, 35)
+        header.setPadding(20, 30, 20, 25)
+
+        root.addView(header)
+
+        val scroll = ScrollView(this)
+
+        feed = LinearLayout(this)
+        feed.orientation = LinearLayout.VERTICAL
+        feed.setPadding(20, 10, 20, 20)
+
+        scroll.addView(feed)
 
         root.addView(
-            header,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        )
-
-        // Кнопка добавления товара
-        val addButton = Button(this)
-        addButton.text = "+ Добавить товар"
-        addButton.setOnClickListener {
-            showAddProductDialog()
-        }
-
-        root.addView(
-            addButton,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(20, 5, 20, 10)
-            }
-        )
-
-        // Заголовок каталога
-        val catalogTitle = TextView(this)
-        catalogTitle.text = "Каталог товаров"
-        catalogTitle.textSize = 22f
-        catalogTitle.setTextColor(Color.WHITE)
-        catalogTitle.setPadding(20, 15, 20, 15)
-
-        root.addView(catalogTitle)
-
-        // Прокручиваемый каталог
-        val scrollView = ScrollView(this)
-
-        productContainer = LinearLayout(this)
-        productContainer.orientation = LinearLayout.VERTICAL
-        productContainer.setPadding(15, 5, 15, 20)
-
-        scrollView.addView(productContainer)
-
-        root.addView(
-            scrollView,
+            scroll,
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 0,
@@ -95,196 +57,168 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        // Нижняя панель
-        val bottomBar = LinearLayout(this)
-        bottomBar.orientation = LinearLayout.HORIZONTAL
-        bottomBar.gravity = Gravity.CENTER
-        bottomBar.setPadding(5, 10, 5, 10)
+        val bottom = LinearLayout(this)
+        bottom.orientation = LinearLayout.HORIZONTAL
+        bottom.setBackgroundColor(Color.rgb(25, 28, 34))
 
-        val catalogButton = Button(this)
-        catalogButton.text = "Каталог"
+        addNavigationButton(bottom, "Главная", true)
+        addNavigationButton(bottom, "Поиск", false)
+        addNavigationButton(bottom, "+", false)
+        addNavigationButton(bottom, "Сообщения", false)
+        addNavigationButton(bottom, "Профиль", false)
 
-        val purchasesButton = Button(this)
-        purchasesButton.text = "Мои покупки"
-
-        bottomBar.addView(
-            catalogButton,
-            LinearLayout.LayoutParams(0, 60, 1f)
+        root.addView(
+            bottom,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                80
+            )
         )
-
-        bottomBar.addView(
-            purchasesButton,
-            LinearLayout.LayoutParams(0, 60, 1f)
-        )
-
-        root.addView(bottomBar)
 
         setContentView(root)
 
-        refreshProducts()
+        refreshFeed()
     }
 
-    private fun refreshProducts() {
+    private fun refreshFeed() {
+        feed.removeAllViews()
 
-        productContainer.removeAllViews()
-
-        if (products.isEmpty()) {
-
-            val emptyText = TextView(this)
-            emptyText.text = "Товаров пока нет"
-            emptyText.textSize = 18f
-            emptyText.setTextColor(Color.LTGRAY)
-            emptyText.gravity = Gravity.CENTER
-            emptyText.setPadding(20, 50, 20, 50)
-
-            productContainer.addView(emptyText)
-
-            return
-        }
-
-        products.forEachIndexed { index, product ->
-
+        for (post in posts.asReversed()) {
             val card = LinearLayout(this)
             card.orientation = LinearLayout.VERTICAL
-            card.setPadding(25, 20, 25, 20)
-            card.setBackgroundColor(Color.rgb(30, 34, 40))
+            card.setBackgroundColor(Color.rgb(28, 32, 38))
+            card.setPadding(20, 20, 20, 20)
 
-            val name = TextView(this)
-            name.text = product.name
-            name.textSize = 20f
-            name.setTextColor(Color.WHITE)
+            val username = TextView(this)
+            username.text = "●  Пользователь Zuno"
+            username.textSize = 16f
+            username.setTextColor(Color.WHITE)
 
-            val description = TextView(this)
-            description.text = product.description
-            description.textSize = 15f
-            description.setTextColor(Color.LTGRAY)
-            description.setPadding(0, 8, 0, 8)
+            val text = TextView(this)
+            text.text = post
+            text.textSize = 18f
+            text.setTextColor(Color.WHITE)
+            text.setPadding(0, 20, 0, 20)
 
-            val price = TextView(this)
-            price.text = "${product.price} ₽"
-            price.textSize = 19f
-            price.setTextColor(Color.rgb(80, 170, 255))
+            val actions = TextView(this)
+            actions.text = "♡ 0        💬 0        ↗ Поделиться"
+            actions.textSize = 15f
+            actions.setTextColor(Color.LTGRAY)
 
-            val buyButton = Button(this)
-            buyButton.text = "Купить"
-
-            buyButton.setOnClickListener {
-                Toast.makeText(
-                    this,
-                    "Покупка: ${product.name}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-            val deleteButton = Button(this)
-            deleteButton.text = "Удалить товар"
-
-            deleteButton.setOnClickListener {
-                showDeleteDialog(index)
-            }
-
-            card.addView(name)
-            card.addView(description)
-            card.addView(price)
-            card.addView(buyButton)
-            card.addView(deleteButton)
+            card.addView(username)
+            card.addView(text)
+            card.addView(actions)
 
             val params = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
 
-            params.setMargins(0, 0, 0, 20)
+            params.setMargins(0, 0, 0, 18)
 
-            productContainer.addView(card, params)
+            feed.addView(card, params)
         }
     }
 
-    private fun showAddProductDialog() {
+    private fun addNavigationButton(
+        parent: LinearLayout,
+        title: String,
+        selected: Boolean
+    ) {
+        val button = Button(this)
+        button.text = title
+        button.textSize = 11f
 
+        if (selected) {
+            button.setTextColor(Color.rgb(80, 150, 255))
+        } else {
+            button.setTextColor(Color.WHITE)
+        }
+
+        button.setOnClickListener {
+            when (title) {
+                "+" -> showCreatePost()
+
+                "Поиск" -> showInfo(
+                    "Поиск",
+                    "Поиск пользователей и публикаций появится здесь."
+                )
+
+                "Сообщения" -> showInfo(
+                    "Сообщения",
+                    "Личные сообщения появятся здесь."
+                )
+
+                "Профиль" -> showInfo(
+                    "Профиль",
+                    "Профиль пользователя появится здесь."
+                )
+
+                "Главная" -> showHome()
+            }
+        }
+
+        parent.addView(
+            button,
+            LinearLayout.LayoutParams(0, 80, 1f)
+        )
+    }
+
+    private fun showCreatePost() {
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(40, 10, 40, 10)
+        layout.setPadding(35, 10, 35, 10)
 
-        val nameInput = EditText(this)
-        nameInput.hint = "Название товара"
+        val input = EditText(this)
+        input.hint = "Что нового?"
+        input.minLines = 5
+        input.gravity = Gravity.TOP
 
-        val descriptionInput = EditText(this)
-        descriptionInput.hint = "Описание товара"
-
-        val priceInput = EditText(this)
-        priceInput.hint = "Цена"
-        priceInput.inputType = 2
-
-        layout.addView(nameInput)
-        layout.addView(descriptionInput)
-        layout.addView(priceInput)
+        layout.addView(
+            input,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                250
+            )
+        )
 
         AlertDialog.Builder(this)
-            .setTitle("Добавить товар")
+            .setTitle("Создать публикацию")
             .setView(layout)
             .setNegativeButton("Отмена", null)
-            .setPositiveButton("Добавить") { _, _ ->
+            .setPositiveButton("Опубликовать") { _, _ ->
 
-                val name = nameInput.text.toString().trim()
-                val description = descriptionInput.text.toString().trim()
-                val price = priceInput.text.toString().toIntOrNull()
+                val text = input.text.toString().trim()
 
-                if (name.isEmpty() || description.isEmpty() || price == null) {
+                if (text.isEmpty()) {
+                    Toast.makeText(
+                        this,
+                        "Напиши текст публикации",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    posts.add(text)
 
                     Toast.makeText(
                         this,
-                        "Заполни все поля",
+                        "Публикация создана 🚀",
                         Toast.LENGTH_SHORT
                     ).show()
 
-                    return@setPositiveButton
+                    showHome()
                 }
-
-                products.add(
-                    Product(
-                        name,
-                        description,
-                        price
-                    )
-                )
-
-                refreshProducts()
-
-                Toast.makeText(
-                    this,
-                    "Товар добавлен",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
             .show()
     }
 
-    private fun showDeleteDialog(index: Int) {
-
+    private fun showInfo(
+        title: String,
+        message: String
+    ) {
         AlertDialog.Builder(this)
-            .setTitle("Удалить товар?")
-            .setMessage(products[index].name)
-            .setNegativeButton("Отмена", null)
-            .setPositiveButton("Удалить") { _, _ ->
-
-                products.removeAt(index)
-                refreshProducts()
-
-                Toast.makeText(
-                    this,
-                    "Товар удалён",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
             .show()
     }
 }
-Шаг 7
-После вставки:
-Нажми Save changes / Сохранить изменения.
-В поле сообщения коммита напиши: Создан каталог Zuno.
-Выбери Commit changes.
-Подожди, пока GitHub сохранит файл.
-Напиши мне «сохранил».
-Потом перейдём к сборке APK, чтобы установить Zuno на телефон.
