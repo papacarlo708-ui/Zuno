@@ -20,72 +20,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
 
-      - name: Find Android project
-        shell: bash
-        run: |
-          echo "Searching for Gradle project..."
-
-          PROJECT_DIR=$(find . -type f \( \
-            -name "settings.gradle" \
-            -o -name "settings.gradle.kts" \
-          \) -not -path "./.git/*" | head -n 1 | xargs -r dirname)
-
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Android Gradle project not found."
-            echo "Files in repository:"
-            find . -maxdepth 3 -type f | sort
-            exit 1
-          fi
-
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Android project found: $PROJECT_DIR"
-
       - name: Build APK
-        shell: bash
-        run: |
-          cd "$PROJECT_DIR"
-
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug \
-              --no-daemon \
-              --stacktrace \
-              -Pkotlin.jvm.target.validation.mode=ignore
-          else
-            gradle assembleDebug \
-              --no-daemon \
-              --stacktrace \
-              -Pkotlin.jvm.target.validation.mode=ignore
-          fi
+        run: gradle assembleDebug
 
       - name: Find APK
-        shell: bash
-        run: |
-          echo "Searching for APK..."
-
-          APK=$(find "$PROJECT_DIR" -type f \
-            -path "*/build/outputs/apk/*.apk" \
-            | head -n 1)
-
-          if [ -z "$APK" ]; then
-            echo "ERROR: APK not found."
-            find "$PROJECT_DIR" -type f | grep -E '\.apk$|build/outputs' || true
-            exit 1
-          fi
-
-          echo "APK found: $APK"
-          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
+        run: find app/build/outputs/apk -type f -name "*.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zuno-debug-apk
-          path: ${{ env.APK_PATH }}
-          if-no-files-found: error
+          name: Zuno-debug
+          path: app/build/outputs/apk/debug/*.apk
