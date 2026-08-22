@@ -20,27 +20,25 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Extract Android project
+      - name: Unpack Android project
         run: |
-          unzip -q Zuno-Android-Project.zip -d android-project
+          mkdir project
+          unzip -q Zuno-Android-Project.zip -d project
 
-      - name: Find Gradle project
-        id: gradle
-        run: |
-          GRADLEW=$(find android-project -name gradlew -type f | head -n 1)
-          if [ -z "$GRADLEW" ]; then
-            echo "gradlew not found"
-            find android-project -maxdepth 4 -type f | head -100
+          PROJECT_DIR=$(dirname "$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)")
+
+          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
+            echo "Android project not found inside ZIP"
+            find project -maxdepth 3 -type f
             exit 1
           fi
 
-          PROJECT_DIR=$(dirname "$GRADLEW")
-          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found project: $PROJECT_DIR"
+          echo "Project directory: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Build APK
-        working-directory: ${{ steps.gradle.outputs.project_dir }}
         run: |
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -48,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Zuno-APK
-          path: ${{ steps.gradle.outputs.project_dir }}/app/build/outputs/apk/debug/*.apk
+          path: "**/app/build/outputs/apk/debug/*.apk"
