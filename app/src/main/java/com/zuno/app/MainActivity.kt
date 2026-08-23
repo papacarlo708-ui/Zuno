@@ -21,7 +21,7 @@ private const val SUPABASE_URL =
     "https://exbhmjhttfmgycdhrmpl.supabase.co"
 
 private const val SUPABASE_PUBLISHABLE_KEY =
-    "ВСТАВЬ_СЮДА_СВОЙ_PUBLISHABLE_KEY"
+    "sb_publishable_PlHxnQpmCwKG6IGjIKkVrA_mb7hQ6Sk"
 
 private val supabase = createSupabaseClient(
     supabaseUrl = SUPABASE_URL,
