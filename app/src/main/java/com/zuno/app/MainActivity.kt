@@ -1,224 +1,467 @@
 package com.zuno.app
 
-import android.graphics.Color
 import android.os.Bundle
+import android.graphics.Color
 import android.view.Gravity
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.createSupabaseClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+private const val SUPABASE_URL =
+    "https://exbhmjhttfmgycdhrmpl.supabase.co"
+
+private const val SUPABASE_PUBLISHABLE_KEY =
+    "ВСТАВЬ_СЮДА_СВОЙ_PUBLISHABLE_KEY"
+
+private val supabase = createSupabaseClient(
+    supabaseUrl = SUPABASE_URL,
+    supabaseKey = SUPABASE_PUBLISHABLE_KEY
+) {
+    install(Auth)
+}
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var feed: LinearLayout
-
-    private val posts = mutableListOf(
-        "Добро пожаловать в Zuno! 🚀",
-        "Это первая публикация нашей социальной сети."
-    )
+    private lateinit var root: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        showHome()
+
+        showStartScreen()
     }
 
-    private fun showHome() {
-        val root = LinearLayout(this)
-        root.orientation = LinearLayout.VERTICAL
-        root.setBackgroundColor(Color.rgb(15, 17, 20))
+    private fun showStartScreen() {
 
-        val header = TextView(this)
-        header.text = "Zuno"
-        header.textSize = 28f
-        header.setTextColor(Color.WHITE)
-        header.gravity = Gravity.CENTER
-        header.setPadding(20, 30, 20, 25)
+        root = createRoot()
 
-        root.addView(header)
+        val title = createTitle("Zuno")
 
-        val scroll = ScrollView(this)
-
-        feed = LinearLayout(this)
-        feed.orientation = LinearLayout.VERTICAL
-        feed.setPadding(20, 10, 20, 20)
-
-        scroll.addView(feed)
-
-        root.addView(
-            scroll,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            )
+        val subtitle = createText(
+            "Добро пожаловать в Zuno"
         )
 
-        val bottom = LinearLayout(this)
-        bottom.orientation = LinearLayout.HORIZONTAL
-        bottom.setBackgroundColor(Color.rgb(25, 28, 34))
+        val loginButton = createButton("Войти")
+        val registerButton = createButton("Регистрация")
 
-        addNavigationButton(bottom, "Главная", true)
-        addNavigationButton(bottom, "Поиск", false)
-        addNavigationButton(bottom, "+", false)
-        addNavigationButton(bottom, "Сообщения", false)
-        addNavigationButton(bottom, "Профиль", false)
+        loginButton.setOnClickListener {
+            showLoginScreen()
+        }
 
-        root.addView(
-            bottom,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                80
-            )
-        )
+        registerButton.setOnClickListener {
+            showRegisterScreen()
+        }
+
+        root.addView(title)
+        root.addView(subtitle)
+        root.addView(loginButton)
+        root.addView(registerButton)
 
         setContentView(root)
-
-        refreshFeed()
     }
 
-    private fun refreshFeed() {
-        feed.removeAllViews()
+    private fun showLoginScreen() {
 
-        for (post in posts.asReversed()) {
-            val card = LinearLayout(this)
-            card.orientation = LinearLayout.VERTICAL
-            card.setBackgroundColor(Color.rgb(28, 32, 38))
-            card.setPadding(20, 20, 20, 20)
+        root = createRoot()
 
-            val username = TextView(this)
-            username.text = "●  Пользователь Zuno"
-            username.textSize = 16f
-            username.setTextColor(Color.WHITE)
+        val title = createTitle("Вход")
 
-            val text = TextView(this)
-            text.text = post
-            text.textSize = 18f
-            text.setTextColor(Color.WHITE)
-            text.setPadding(0, 20, 0, 20)
+        val emailInput = createInput(
+            "Email",
+            false
+        )
 
-            val actions = TextView(this)
-            actions.text = "♡ 0        💬 0        ↗ Поделиться"
-            actions.textSize = 15f
-            actions.setTextColor(Color.LTGRAY)
+        val passwordInput = createInput(
+            "Пароль",
+            true
+        )
 
-            card.addView(username)
-            card.addView(text)
-            card.addView(actions)
+        val loginButton = createButton("Войти")
+        val backButton = createButton("Назад")
 
-            val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+        loginButton.setOnClickListener {
 
-            params.setMargins(0, 0, 0, 18)
+            val email = emailInput.text.toString().trim()
+            val password = passwordInput.text.toString()
 
-            feed.addView(card, params)
+            if (email.isEmpty() || password.isEmpty()) {
+                toast("Заполни email и пароль")
+                return@setOnClickListener
+            }
+
+            loginUser(email, password)
         }
+
+        backButton.setOnClickListener {
+            showStartScreen()
+        }
+
+        root.addView(title)
+        root.addView(emailInput)
+        root.addView(passwordInput)
+        root.addView(loginButton)
+        root.addView(backButton)
+
+        setContentView(root)
     }
 
-    private fun addNavigationButton(
-        parent: LinearLayout,
-        title: String,
-        selected: Boolean
+    private fun showRegisterScreen() {
+
+        root = createRoot()
+
+        val title = createTitle("Регистрация")
+
+        val emailInput = createInput(
+            "Email",
+            false
+        )
+
+        val passwordInput = createInput(
+            "Пароль",
+            true
+        )
+
+        val registerButton = createButton("Создать аккаунт")
+        val backButton = createButton("Назад")
+
+        registerButton.setOnClickListener {
+
+            val email = emailInput.text.toString().trim()
+            val password = passwordInput.text.toString()
+
+            if (email.isEmpty() || password.isEmpty()) {
+                toast("Заполни email и пароль")
+                return@setOnClickListener
+            }
+
+            if (password.length < 6) {
+                toast("Пароль должен содержать минимум 6 символов")
+                return@setOnClickListener
+            }
+
+            registerUser(email, password)
+        }
+
+        backButton.setOnClickListener {
+            showStartScreen()
+        }
+
+        root.addView(title)
+        root.addView(emailInput)
+        root.addView(passwordInput)
+        root.addView(registerButton)
+        root.addView(backButton)
+
+        setContentView(root)
+    }
+
+    private fun loginUser(
+        email: String,
+        password: String
     ) {
-        val button = Button(this)
-        button.text = title
-        button.textSize = 11f
 
-        if (selected) {
-            button.setTextColor(Color.rgb(80, 150, 255))
-        } else {
-            button.setTextColor(Color.WHITE)
-        }
+        toast("Выполняется вход...")
 
-        button.setOnClickListener {
-            when (title) {
-                "+" -> showCreatePost()
+        CoroutineScope(Dispatchers.Main).launch {
 
-                "Поиск" -> showInfo(
-                    "Поиск",
-                    "Поиск пользователей и публикаций появится здесь."
+            try {
+
+                supabase.auth.signInWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+
+                toast("Вход выполнен")
+
+                showHomeScreen()
+
+            } catch (e: Exception) {
+
+                toast(
+                    "Ошибка входа: ${e.message ?: "неизвестная ошибка"}"
                 )
-
-                "Сообщения" -> showInfo(
-                    "Сообщения",
-                    "Личные сообщения появятся здесь."
-                )
-
-                "Профиль" -> showInfo(
-                    "Профиль",
-                    "Профиль пользователя появится здесь."
-                )
-
-                "Главная" -> showHome()
             }
         }
-
-        parent.addView(
-            button,
-            LinearLayout.LayoutParams(0, 80, 1f)
-        )
     }
 
-    private fun showCreatePost() {
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(35, 10, 35, 10)
+    private fun registerUser(
+        email: String,
+        password: String
+    ) {
 
-        val input = EditText(this)
-        input.hint = "Что нового?"
-        input.minLines = 5
-        input.gravity = Gravity.TOP
+        toast("Создаём аккаунт...")
 
-        layout.addView(
-            input,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                250
-            )
+        CoroutineScope(Dispatchers.Main).launch {
+
+            try {
+
+                supabase.auth.signUpWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+
+                toast(
+                    "Аккаунт создан. Проверь email для подтверждения."
+                )
+
+                showStartScreen()
+
+            } catch (e: Exception) {
+
+                toast(
+                    "Ошибка регистрации: ${e.message ?: "неизвестная ошибка"}"
+                )
+            }
+        }
+    }
+
+    private fun showHomeScreen() {
+
+        root = createRoot()
+
+        val title = createTitle("Zuno")
+
+        val welcome = createText(
+            "Вы вошли в аккаунт"
         )
 
-        AlertDialog.Builder(this)
-            .setTitle("Создать публикацию")
-            .setView(layout)
-            .setNegativeButton("Отмена", null)
-            .setPositiveButton("Опубликовать") { _, _ ->
+        val userEmail = supabase.auth.currentUserOrNull()?.email
 
-                val text = input.text.toString().trim()
+        val account = createText(
+            userEmail ?: "Пользователь"
+        )
 
-                if (text.isEmpty()) {
-                    Toast.makeText(
-                        this,
-                        "Напиши текст публикации",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    posts.add(text)
+        val postsButton = createButton(
+            "Публикации"
+        )
 
-                    Toast.makeText(
-                        this,
-                        "Публикация создана 🚀",
-                        Toast.LENGTH_SHORT
-                    ).show()
+        val profileButton = createButton(
+            "Профиль"
+        )
 
-                    showHome()
+        val logoutButton = createButton(
+            "Выйти"
+        )
+
+        postsButton.setOnClickListener {
+            toast("Раздел публикаций скоро будет подключён")
+        }
+
+        profileButton.setOnClickListener {
+            showProfileScreen()
+        }
+
+        logoutButton.setOnClickListener {
+
+            CoroutineScope(Dispatchers.Main).launch {
+
+                try {
+
+                    supabase.auth.signOut()
+
+                    toast("Вы вышли из аккаунта")
+
+                    showStartScreen()
+
+                } catch (e: Exception) {
+
+                    toast(
+                        "Ошибка выхода: ${e.message ?: "неизвестная ошибка"}"
+                    )
                 }
             }
-            .show()
+        }
+
+        root.addView(title)
+        root.addView(welcome)
+        root.addView(account)
+        root.addView(postsButton)
+        root.addView(profileButton)
+        root.addView(logoutButton)
+
+        setContentView(root)
     }
 
-    private fun showInfo(
-        title: String,
+    private fun showProfileScreen() {
+
+        root = createRoot()
+
+        val title = createTitle("Профиль")
+
+        val user = supabase.auth.currentUserOrNull()
+
+        val email = createText(
+            "Email: ${user?.email ?: "не указан"}"
+        )
+
+        val backButton = createButton("Назад")
+
+        backButton.setOnClickListener {
+            showHomeScreen()
+        }
+
+        root.addView(title)
+        root.addView(email)
+        root.addView(backButton)
+
+        setContentView(root)
+    }
+
+    private fun createRoot(): LinearLayout {
+
+        val layout = LinearLayout(this)
+
+        layout.orientation = LinearLayout.VERTICAL
+
+        layout.gravity = Gravity.CENTER_HORIZONTAL
+
+        layout.setPadding(
+            40,
+            50,
+            40,
+            40
+        )
+
+        layout.setBackgroundColor(
+            Color.rgb(15, 17, 20)
+        )
+
+        return layout
+    }
+
+    private fun createTitle(
+        text: String
+    ): TextView {
+
+        val view = TextView(this)
+
+        view.text = text
+        view.textSize = 32f
+        view.setTextColor(Color.WHITE)
+        view.gravity = Gravity.CENTER
+        view.setPadding(0, 0, 0, 30)
+
+        view.layoutParams =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+        return view
+    }
+
+    private fun createText(
+        text: String
+    ): TextView {
+
+        val view = TextView(this)
+
+        view.text = text
+        view.textSize = 18f
+        view.setTextColor(Color.LTGRAY)
+        view.gravity = Gravity.CENTER
+        view.setPadding(0, 10, 0, 25)
+
+        view.layoutParams =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+        return view
+    }
+
+    private fun createInput(
+        hint: String,
+        password: Boolean
+    ): EditText {
+
+        val input = EditText(this)
+
+        input.hint = hint
+        input.setTextColor(Color.WHITE)
+        input.setHintTextColor(Color.GRAY)
+        input.textSize = 17f
+
+        input.setPadding(
+            25,
+            15,
+            25,
+            15
+        )
+
+        if (password) {
+            input.inputType =
+                android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        } else {
+            input.inputType =
+                android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        }
+
+        val params =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+        params.setMargins(
+            0,
+            10,
+            0,
+            10
+        )
+
+        input.layoutParams = params
+
+        return input
+    }
+
+    private fun createButton(
+        text: String
+    ): Button {
+
+        val button = Button(this)
+
+        button.text = text
+        button.textSize = 16f
+
+        val params =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+        params.setMargins(
+            0,
+            12,
+            0,
+            12
+        )
+
+        button.layoutParams = params
+
+        return button
+    }
+
+    private fun toast(
         message: String
     ) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .show()
+
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_LONG
+        ).show()
     }
 }
